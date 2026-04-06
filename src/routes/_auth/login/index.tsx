@@ -1,4 +1,5 @@
 import { createFullPermissions, DEMO_TOKEN, DEMO_USER } from "@/constants/demoAuth";
+import { router } from "@/router";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePermissionStore } from "@/store/usePermissions";
 import { TokenUtil } from "@/utils/tokenUtil";
@@ -22,9 +23,19 @@ function RouteComponent() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    setPermissions(createFullPermissions());
+    const permissions = createFullPermissions();
+    setPermissions(permissions);
     TokenUtil.setToken(DEMO_TOKEN);
     setUser(DEMO_USER);
+
+    router.update({
+      context: {
+        ...router.options.context,
+        isLoggedIn: true,
+        permissions,
+      },
+    });
+
     navigate({ to: redirectTo || "/dashboard" });
   };
 

@@ -29,7 +29,17 @@ const LogoutDialog: React.FC<LogoutProps> = (props) => {
     router.options.context.queryClient.clear();
 
     // Reset permission store to default (no permissions)
-    usePermissionStore.getState().setPermissions(getDefaultPermissions());
+    const defaultPermissions = getDefaultPermissions();
+    usePermissionStore.getState().setPermissions(defaultPermissions);
+
+    // Update router context so route guards see the new auth state
+    router.update({
+      context: {
+        ...router.options.context,
+        isLoggedIn: false,
+        permissions: defaultPermissions,
+      },
+    });
 
     // Invalidate router to force fresh state evaluation
     router.invalidate();

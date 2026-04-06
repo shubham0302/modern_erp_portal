@@ -24,11 +24,7 @@ const updateHtmlClass = (theme: Theme) => {
 const useThemeStore = create<ThemeState>()(
   persist(
     (set, get) => ({
-      theme:
-        typeof window !== "undefined" &&
-        window.matchMedia?.("(prefers-color-scheme: dark)").matches
-          ? "dark"
-          : "light",
+      theme: "light" as Theme,
 
       setTheme: (theme: Theme) => {
         updateHtmlClass(theme);
