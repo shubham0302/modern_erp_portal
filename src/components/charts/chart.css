@@ -1,0 +1,42 @@
+.chart-colors {
+  --chart-inactive: theme(colors.nl.100);
+  --chart-active-light: theme(colors.pl.400);
+  --chart-active: theme(colors.pl.400);
+  --chart-active-dark: theme(colors.pl.300);
+  --chart-text: theme(colors.nl.500);
+  --chart-text-2: theme(colors.nd.700);
+  --area-chart-base-stop: theme(colors.nl.50);
+  --chart-tint-blue: theme(colors.t-blue);
+  --chart-tint-violet: theme(colors.t-violet);
+  --chart-tint-indigo: theme(colors.t-indigo);
+  --chart-tint-amber: theme(colors.t-amber);
+  --chart-tint-pink: theme(colors.t-pink);
+  --chart-tint-peach: theme(colors.t-peach);
+  --chart-tint-yellow: theme(colors.t-yellow);
+  --chart-tint-green: theme(colors.t-green);
+  --chart-tint-gray: theme(colors.t-gray);
+  --chart-tint-orange: theme(colors.t-orange);
+  --chart-tint-purple: theme(colors.t-purple);
+  width: 100%;
+}
+
+.dark .chart-colors {
+  --chart-inactive: theme(colors.nd.600);
+  --chart-active-light: theme(colors.pd.400);
+  --chart-active: theme(colors.pd.500);
+  --chart-active-dark: theme(colors.pd.600);
+  --area-chart-base-stop: theme(colors.nd.700);
+  --chart-text: theme(colors.nd.300);
+  --chart-text-2: theme(colors.nd.100);
+  --chart-tint-blue: theme(colors.t-blue);
+  --chart-tint-violet: theme(colors.t-violet);
+  --chart-tint-indigo: theme(colors.t-indigo);
+  --chart-tint-amber: theme(colors.t-amber);
+  --chart-tint-pink: theme(colors.t-pink);
+  --chart-tint-peach: theme(colors.t-peach);
+  --chart-tint-yellow: theme(colors.t-yellow);
+  --chart-tint-green: theme(colors.t-green);
+  --chart-tint-gray: theme(colors.t-gray);
+  --chart-tint-orange: theme(colors.t-orange);
+  --chart-tint-purple: theme(colors.t-purple);
+}

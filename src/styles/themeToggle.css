@@ -1,0 +1,65 @@
+.theme-toggle-container {
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+}
+
+.svg-container {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sun-svg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(1) rotate(0deg);
+  opacity: 1;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.moon-svg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8) rotate(-90deg);
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.theme-light .svg-container {
+  transform: translateX(0px);
+}
+
+.theme-light .sun-svg {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1) rotate(0deg);
+}
+
+.theme-light .moon-svg {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.8) rotate(-90deg);
+}
+
+.theme-dark .svg-container {
+  transform: translateX(18px);
+}
+
+.theme-dark .sun-svg {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.8) rotate(90deg);
+}
+
+.theme-dark .moon-svg {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1) rotate(0deg);
+}
+
+
+.toggle-track {
+  transition: background 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
