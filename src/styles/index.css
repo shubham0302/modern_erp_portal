@@ -61,10 +61,10 @@ body {
     @apply text-xs;
   }
   .card {
-    @apply dark:bg-nd-700 rounded-3xl bg-white shadow-xs dark:shadow-nd-900/30 dark:shadow-sm;
+    @apply dark:bg-nd-700 rounded-[2rem] bg-white shadow-xs dark:shadow-nd-900/30 dark:shadow-sm;
   }
   .card--soft {
-    @apply dark:bg-nd-800 rounded-3xl bg-white shadow-xs dark:shadow-nd-900/30 dark:shadow-sm;
+    @apply dark:bg-nd-800 rounded-[2rem] bg-white shadow-xs dark:shadow-nd-900/30 dark:shadow-sm;
   }
   .rotate-360 {
     transform: rotate(360deg);

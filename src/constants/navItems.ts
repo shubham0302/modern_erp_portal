@@ -9,7 +9,7 @@ export const NAV_ITEMS: NavItemTypes[] = [
   },
   {
     label: "Inventory",
-    path: ROUTES.INVENTORY,
+    path: ROUTES.INVENTORY.ROOT,
     icon: "Package",
   },
   {

@@ -1,6 +1,9 @@
 export const ROUTES = {
   DASHBOARD: "/dashboard",
-  INVENTORY: "/inventory",
+  INVENTORY: {
+    ROOT: "/inventory",
+    SIZE: (size: string) => `/inventory/${size}`,
+  },
   ORDERS: "/orders",
   CUSTOMERS: "/customers",
   REPORTS: "/reports",

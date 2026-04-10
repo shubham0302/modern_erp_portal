@@ -18,6 +18,7 @@ import { Route as ProtectedInventoryIndexRouteImport } from './routes/_protected
 import { Route as ProtectedDashboardIndexRouteImport } from './routes/_protected/dashboard/index'
 import { Route as ProtectedCustomersIndexRouteImport } from './routes/_protected/customers/index'
 import { Route as AuthLoginIndexRouteImport } from './routes/_auth/login/index'
+import { Route as ProtectedInventorySizeRouteImport } from './routes/_protected/inventory/$size'
 
 const ProtectedRouteRoute = ProtectedRouteRouteImport.update({
   id: '/_protected',
@@ -62,8 +63,14 @@ const AuthLoginIndexRoute = AuthLoginIndexRouteImport.update({
   path: '/login/',
   getParentRoute: () => AuthRouteRoute,
 } as any)
+const ProtectedInventorySizeRoute = ProtectedInventorySizeRouteImport.update({
+  id: '/inventory/$size',
+  path: '/inventory/$size',
+  getParentRoute: () => ProtectedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
+  '/inventory/$size': typeof ProtectedInventorySizeRoute
   '/login': typeof AuthLoginIndexRoute
   '/customers': typeof ProtectedCustomersIndexRoute
   '/dashboard': typeof ProtectedDashboardIndexRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof ProtectedSettingsIndexRoute
 }
 export interface FileRoutesByTo {
+  '/inventory/$size': typeof ProtectedInventorySizeRoute
   '/login': typeof AuthLoginIndexRoute
   '/customers': typeof ProtectedCustomersIndexRoute
   '/dashboard': typeof ProtectedDashboardIndexRoute
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_auth': typeof AuthRouteRouteWithChildren
   '/_protected': typeof ProtectedRouteRouteWithChildren
+  '/_protected/inventory/$size': typeof ProtectedInventorySizeRoute
   '/_auth/login/': typeof AuthLoginIndexRoute
   '/_protected/customers/': typeof ProtectedCustomersIndexRoute
   '/_protected/dashboard/': typeof ProtectedDashboardIndexRoute
@@ -96,6 +105,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/inventory/$size'
     | '/login'
     | '/customers'
     | '/dashboard'
@@ -105,6 +115,7 @@ export interface FileRouteTypes {
     | '/settings'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/inventory/$size'
     | '/login'
     | '/customers'
     | '/dashboard'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_auth'
     | '/_protected'
+    | '/_protected/inventory/$size'
     | '/_auth/login/'
     | '/_protected/customers/'
     | '/_protected/dashboard/'
@@ -195,6 +207,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginIndexRouteImport
       parentRoute: typeof AuthRouteRoute
     }
+    '/_protected/inventory/$size': {
+      id: '/_protected/inventory/$size'
+      path: '/inventory/$size'
+      fullPath: '/inventory/$size'
+      preLoaderRoute: typeof ProtectedInventorySizeRouteImport
+      parentRoute: typeof ProtectedRouteRoute
+    }
   }
 }
 
@@ -211,6 +230,7 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 )
 
 interface ProtectedRouteRouteChildren {
+  ProtectedInventorySizeRoute: typeof ProtectedInventorySizeRoute
   ProtectedCustomersIndexRoute: typeof ProtectedCustomersIndexRoute
   ProtectedDashboardIndexRoute: typeof ProtectedDashboardIndexRoute
   ProtectedInventoryIndexRoute: typeof ProtectedInventoryIndexRoute
@@ -220,6 +240,7 @@ interface ProtectedRouteRouteChildren {
 }
 
 const ProtectedRouteRouteChildren: ProtectedRouteRouteChildren = {
+  ProtectedInventorySizeRoute: ProtectedInventorySizeRoute,
   ProtectedCustomersIndexRoute: ProtectedCustomersIndexRoute,
   ProtectedDashboardIndexRoute: ProtectedDashboardIndexRoute,
   ProtectedInventoryIndexRoute: ProtectedInventoryIndexRoute,
