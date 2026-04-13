@@ -15,8 +15,8 @@ import { Route as ProtectedSettingsIndexRouteImport } from './routes/_protected/
 import { Route as ProtectedReportsIndexRouteImport } from './routes/_protected/reports/index'
 import { Route as ProtectedOrdersIndexRouteImport } from './routes/_protected/orders/index'
 import { Route as ProtectedInventoryIndexRouteImport } from './routes/_protected/inventory/index'
+import { Route as ProtectedInventoryItemsIndexRouteImport } from './routes/_protected/inventory-items/index'
 import { Route as ProtectedDashboardIndexRouteImport } from './routes/_protected/dashboard/index'
-import { Route as ProtectedCustomersIndexRouteImport } from './routes/_protected/customers/index'
 import { Route as AuthLoginIndexRouteImport } from './routes/_auth/login/index'
 import { Route as ProtectedInventorySizeRouteImport } from './routes/_protected/inventory/$size'
 
@@ -48,14 +48,15 @@ const ProtectedInventoryIndexRoute = ProtectedInventoryIndexRouteImport.update({
   path: '/inventory/',
   getParentRoute: () => ProtectedRouteRoute,
 } as any)
+const ProtectedInventoryItemsIndexRoute =
+  ProtectedInventoryItemsIndexRouteImport.update({
+    id: '/inventory-items/',
+    path: '/inventory-items/',
+    getParentRoute: () => ProtectedRouteRoute,
+  } as any)
 const ProtectedDashboardIndexRoute = ProtectedDashboardIndexRouteImport.update({
   id: '/dashboard/',
   path: '/dashboard/',
-  getParentRoute: () => ProtectedRouteRoute,
-} as any)
-const ProtectedCustomersIndexRoute = ProtectedCustomersIndexRouteImport.update({
-  id: '/customers/',
-  path: '/customers/',
   getParentRoute: () => ProtectedRouteRoute,
 } as any)
 const AuthLoginIndexRoute = AuthLoginIndexRouteImport.update({
@@ -72,8 +73,8 @@ const ProtectedInventorySizeRoute = ProtectedInventorySizeRouteImport.update({
 export interface FileRoutesByFullPath {
   '/inventory/$size': typeof ProtectedInventorySizeRoute
   '/login': typeof AuthLoginIndexRoute
-  '/customers': typeof ProtectedCustomersIndexRoute
   '/dashboard': typeof ProtectedDashboardIndexRoute
+  '/inventory-items': typeof ProtectedInventoryItemsIndexRoute
   '/inventory': typeof ProtectedInventoryIndexRoute
   '/orders': typeof ProtectedOrdersIndexRoute
   '/reports': typeof ProtectedReportsIndexRoute
@@ -82,8 +83,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/inventory/$size': typeof ProtectedInventorySizeRoute
   '/login': typeof AuthLoginIndexRoute
-  '/customers': typeof ProtectedCustomersIndexRoute
   '/dashboard': typeof ProtectedDashboardIndexRoute
+  '/inventory-items': typeof ProtectedInventoryItemsIndexRoute
   '/inventory': typeof ProtectedInventoryIndexRoute
   '/orders': typeof ProtectedOrdersIndexRoute
   '/reports': typeof ProtectedReportsIndexRoute
@@ -95,8 +96,8 @@ export interface FileRoutesById {
   '/_protected': typeof ProtectedRouteRouteWithChildren
   '/_protected/inventory/$size': typeof ProtectedInventorySizeRoute
   '/_auth/login/': typeof AuthLoginIndexRoute
-  '/_protected/customers/': typeof ProtectedCustomersIndexRoute
   '/_protected/dashboard/': typeof ProtectedDashboardIndexRoute
+  '/_protected/inventory-items/': typeof ProtectedInventoryItemsIndexRoute
   '/_protected/inventory/': typeof ProtectedInventoryIndexRoute
   '/_protected/orders/': typeof ProtectedOrdersIndexRoute
   '/_protected/reports/': typeof ProtectedReportsIndexRoute
@@ -107,8 +108,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/inventory/$size'
     | '/login'
-    | '/customers'
     | '/dashboard'
+    | '/inventory-items'
     | '/inventory'
     | '/orders'
     | '/reports'
@@ -117,8 +118,8 @@ export interface FileRouteTypes {
   to:
     | '/inventory/$size'
     | '/login'
-    | '/customers'
     | '/dashboard'
+    | '/inventory-items'
     | '/inventory'
     | '/orders'
     | '/reports'
@@ -129,8 +130,8 @@ export interface FileRouteTypes {
     | '/_protected'
     | '/_protected/inventory/$size'
     | '/_auth/login/'
-    | '/_protected/customers/'
     | '/_protected/dashboard/'
+    | '/_protected/inventory-items/'
     | '/_protected/inventory/'
     | '/_protected/orders/'
     | '/_protected/reports/'
@@ -186,18 +187,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedInventoryIndexRouteImport
       parentRoute: typeof ProtectedRouteRoute
     }
+    '/_protected/inventory-items/': {
+      id: '/_protected/inventory-items/'
+      path: '/inventory-items'
+      fullPath: '/inventory-items'
+      preLoaderRoute: typeof ProtectedInventoryItemsIndexRouteImport
+      parentRoute: typeof ProtectedRouteRoute
+    }
     '/_protected/dashboard/': {
       id: '/_protected/dashboard/'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof ProtectedDashboardIndexRouteImport
-      parentRoute: typeof ProtectedRouteRoute
-    }
-    '/_protected/customers/': {
-      id: '/_protected/customers/'
-      path: '/customers'
-      fullPath: '/customers'
-      preLoaderRoute: typeof ProtectedCustomersIndexRouteImport
       parentRoute: typeof ProtectedRouteRoute
     }
     '/_auth/login/': {
@@ -231,8 +232,8 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 
 interface ProtectedRouteRouteChildren {
   ProtectedInventorySizeRoute: typeof ProtectedInventorySizeRoute
-  ProtectedCustomersIndexRoute: typeof ProtectedCustomersIndexRoute
   ProtectedDashboardIndexRoute: typeof ProtectedDashboardIndexRoute
+  ProtectedInventoryItemsIndexRoute: typeof ProtectedInventoryItemsIndexRoute
   ProtectedInventoryIndexRoute: typeof ProtectedInventoryIndexRoute
   ProtectedOrdersIndexRoute: typeof ProtectedOrdersIndexRoute
   ProtectedReportsIndexRoute: typeof ProtectedReportsIndexRoute
@@ -241,8 +242,8 @@ interface ProtectedRouteRouteChildren {
 
 const ProtectedRouteRouteChildren: ProtectedRouteRouteChildren = {
   ProtectedInventorySizeRoute: ProtectedInventorySizeRoute,
-  ProtectedCustomersIndexRoute: ProtectedCustomersIndexRoute,
   ProtectedDashboardIndexRoute: ProtectedDashboardIndexRoute,
+  ProtectedInventoryItemsIndexRoute: ProtectedInventoryItemsIndexRoute,
   ProtectedInventoryIndexRoute: ProtectedInventoryIndexRoute,
   ProtectedOrdersIndexRoute: ProtectedOrdersIndexRoute,
   ProtectedReportsIndexRoute: ProtectedReportsIndexRoute,

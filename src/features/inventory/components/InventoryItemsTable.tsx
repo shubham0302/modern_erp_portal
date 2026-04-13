@@ -1,19 +1,20 @@
 import { Button } from "@/components/base/Button";
-import { IconButton } from "@/components/base/IconButton";
 import { Table, type TableColumn } from "@/components/compound/table/Table";
 import { cn } from "@/utils/helpers";
-import { PackageOpen, Trash2 } from "lucide-react";
+import { PackageOpen } from "lucide-react";
 import type {
-  Batch,
-  BatchStatus,
   Finish,
+  InventoryItem,
+  InventoryItemStatus,
   Series,
 } from "../types/inventory.types";
 
-interface BatchesTableProps {
-  batches: Batch[];
-  onDelete: (batch: Batch) => void;
-  onRequestStatusChange: (batch: Batch, next: BatchStatus) => void;
+interface InventoryItemsTableProps {
+  items: InventoryItem[];
+  onRequestStatusChange: (
+    item: InventoryItem,
+    next: InventoryItemStatus,
+  ) => void;
   emptyState?: React.ReactNode;
 }
 
@@ -37,31 +38,40 @@ const seriesTint: Record<Series, string> = {
   PF: "bg-t-purple/10 text-t-purple",
 };
 
-const statusStyles: Record<BatchStatus, string> = {
-  pending: "bg-t-amber/10 text-t-amber dark:bg-t-amber/15 dark:text-t-amber",
-  in_production: "bg-t-blue/10 text-t-blue dark:bg-t-blue/15 dark:text-t-blue",
-  production_completed:
-    "bg-t-green/10 text-t-green dark:bg-t-green/15 dark:text-t-green",
+const itemStatusStyles: Record<InventoryItemStatus, string> = {
+  unverified:
+    "bg-t-gray/10 text-t-gray dark:bg-t-gray/15 dark:text-t-gray",
+  verified:
+    "bg-t-amber/10 text-t-amber dark:bg-t-amber/15 dark:text-t-amber",
+  on_the_way:
+    "bg-t-blue/10 text-t-blue dark:bg-t-blue/15 dark:text-t-blue",
+  in_depot:
+    "bg-t-indigo/10 text-t-indigo dark:bg-t-indigo/15 dark:text-t-indigo",
+  sold: "bg-t-green/10 text-t-green dark:bg-t-green/15 dark:text-t-green",
 };
 
-export const STATUS_LABEL: Record<BatchStatus, string> = {
-  pending: "Pending",
-  in_production: "In Production",
-  production_completed: "Production Completed",
+export const ITEM_STATUS_LABEL: Record<InventoryItemStatus, string> = {
+  unverified: "Unverified",
+  verified: "Verified",
+  on_the_way: "On The Way",
+  in_depot: "In Depot",
+  sold: "Sold",
 };
 
-export const getNextStatus = (
-  status: BatchStatus,
-): BatchStatus | null => {
-  if (status === "pending") return "in_production";
-  if (status === "in_production") return "production_completed";
-  return null;
-};
+const ITEM_STATUS_SEQUENCE: InventoryItemStatus[] = [
+  "unverified",
+  "verified",
+  "on_the_way",
+  "in_depot",
+  "sold",
+];
 
-const nextActionLabel: Record<BatchStatus, string> = {
-  pending: "Start Production",
-  in_production: "Mark Completed",
-  production_completed: "",
+export const getNextItemStatus = (
+  status: InventoryItemStatus,
+): InventoryItemStatus | null => {
+  const idx = ITEM_STATUS_SEQUENCE.indexOf(status);
+  if (idx === -1 || idx >= ITEM_STATUS_SEQUENCE.length - 1) return null;
+  return ITEM_STATUS_SEQUENCE[idx + 1];
 };
 
 const formatRelativeTime = (iso: string): string => {
@@ -77,15 +87,14 @@ const formatRelativeTime = (iso: string): string => {
   return date.toLocaleDateString();
 };
 
-const BatchesTable: React.FC<BatchesTableProps> = ({
-  batches,
-  onDelete,
+const InventoryItemsTable: React.FC<InventoryItemsTableProps> = ({
+  items,
   onRequestStatusChange,
   emptyState,
 }) => {
-  const columns: TableColumn<Batch>[] = [
+  const columns: TableColumn<InventoryItem>[] = [
     {
-      header: "Batch ID",
+      header: "ID",
       accessor: "id",
       cell: (value: string) => (
         <span className="text-nl-700 dark:text-nd-100 font-mono text-xs font-medium">
@@ -131,10 +140,10 @@ const BatchesTable: React.FC<BatchesTableProps> = ({
       ),
     },
     {
-      header: "Boxes",
-      accessor: "boxes",
-      cell: (value: number) => (
-        <span className="text-nl-700 dark:text-nd-100 font-medium">
+      header: "Batch ID",
+      accessor: "batchId",
+      cell: (value: string) => (
+        <span className="text-nl-600 dark:text-nd-200 font-mono text-xs">
           {value}
         </span>
       ),
@@ -142,14 +151,14 @@ const BatchesTable: React.FC<BatchesTableProps> = ({
     {
       header: "Status",
       accessor: "status",
-      cell: (value: BatchStatus) => (
+      cell: (value: InventoryItemStatus) => (
         <span
           className={cn(
             "inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-medium",
-            statusStyles[value],
+            itemStatusStyles[value],
           )}
         >
-          {STATUS_LABEL[value]}
+          {ITEM_STATUS_LABEL[value]}
         </span>
       ),
     },
@@ -165,43 +174,28 @@ const BatchesTable: React.FC<BatchesTableProps> = ({
     {
       header: "Actions",
       accessor: (row) => row.id,
-      className: "w-48",
+      className: "w-40",
       cell: (_value, row) => {
-        const next = getNextStatus(row.status);
+        const next = getNextItemStatus(row.status);
+        if (!next) return null;
         return (
-          <div className="flex items-center gap-2">
-            {next ? (
-              <Button
-                size="sm"
-                variant="outline"
-                color="primary"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRequestStatusChange(row, next);
-                }}
-              >
-                {nextActionLabel[row.status]}
-              </Button>
-            ) : (
-              <span className="text-nl-400 dark:text-nd-500 text-xs">—</span>
-            )}
-            {row.status === "pending" && (
-              <IconButton
-                icon={Trash2}
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(row);
-                }}
-              />
-            )}
-          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            color="primary"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRequestStatusChange(row, next);
+            }}
+          >
+            {ITEM_STATUS_LABEL[next]}
+          </Button>
         );
       },
     },
   ];
 
-  if (batches.length === 0) {
+  if (items.length === 0) {
     if (emptyState) return <>{emptyState}</>;
     return (
       <div className="card fall flex-col gap-3 py-14">
@@ -210,17 +204,17 @@ const BatchesTable: React.FC<BatchesTableProps> = ({
         </div>
         <div className="text-center">
           <h6 className="text-nl-700 dark:text-nd-100 font-semibold">
-            No batches yet
+            No inventory items yet
           </h6>
           <p className="text-nl-500 dark:text-nd-400 mt-1 text-sm">
-            Click 'Add Batch' to create one
+            Items are generated when a batch enters production
           </p>
         </div>
       </div>
     );
   }
 
-  return <Table columns={columns} data={batches} />;
+  return <Table columns={columns} data={items} />;
 };
 
-export default BatchesTable;
+export default InventoryItemsTable;

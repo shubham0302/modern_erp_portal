@@ -12,6 +12,8 @@ export type SizeKey =
   | "60x60"
   | "60x120";
 
+export type BatchStatus = "pending" | "in_production" | "production_completed";
+
 export interface Batch {
   id: string;
   size: SizeKey;
@@ -19,5 +21,24 @@ export interface Batch {
   series: Series;
   designCode: string;
   boxes: number;
+  status: BatchStatus;
+  createdAt: string;
+}
+
+export type InventoryItemStatus =
+  | "unverified"
+  | "verified"
+  | "on_the_way"
+  | "in_depot"
+  | "sold";
+
+export interface InventoryItem {
+  id: string;
+  batchId: string;
+  size: SizeKey;
+  finish: Finish;
+  series: Series;
+  designCode: string;
+  status: InventoryItemStatus;
   createdAt: string;
 }

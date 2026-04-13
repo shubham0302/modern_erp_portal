@@ -6,7 +6,7 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/_protected/inventory/")({
   component: RouteComponent,
   staticData: {
-    pageTitle: "Inventory",
+    pageTitle: "Batch Management",
     hideBackButton: true,
   },
 });
@@ -26,7 +26,9 @@ function RouteComponent() {
   return (
     <div className="page-enter space-y-6 pb-8">
       <div>
-        <h4 className="text-nl-800 dark:text-nd-100 font-bold">Inventory</h4>
+        <h4 className="text-nl-800 dark:text-nd-100 font-bold">
+          Batch Management
+        </h4>
         <p className="text-nl-500 dark:text-nd-300 mt-1 text-sm">
           Select a tile size to manage its batches
         </p>

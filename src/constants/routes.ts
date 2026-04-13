@@ -5,7 +5,7 @@ export const ROUTES = {
     SIZE: (size: string) => `/inventory/${size}`,
   },
   ORDERS: "/orders",
-  CUSTOMERS: "/customers",
+  INVENTORY_ITEMS: "/inventory-items",
   REPORTS: "/reports",
   SETTINGS: "/settings",
   LOGIN: "/login",

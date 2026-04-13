@@ -2,7 +2,6 @@ export enum PermissionFeaturesEnum {
   dashboard = "dashboard",
   inventory = "inventory",
   orders = "orders",
-  customers = "customers",
   reports = "reports",
   settings = "settings",
 }

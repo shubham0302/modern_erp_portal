@@ -1,42 +1,32 @@
-import { Button } from "@/components/base/Button";
 import { SingleSelect, type SelectOption } from "@/components/base/Select";
-import DeleteDialog from "@/components/compound/DeleteDialog";
 import Dialog from "@/components/compound/Dialog";
 import SearchInput from "@/components/compound/SearchInput";
 import { toast } from "@/components/compound/Sonner";
-import AddBatchDialog from "@/features/inventory/components/AddBatchDialog";
-import BatchesTable, {
-  STATUS_LABEL,
-} from "@/features/inventory/components/BatchesTable";
+import InventoryItemsTable, {
+  ITEM_STATUS_LABEL,
+} from "@/features/inventory/components/InventoryItemsTable";
 import {
   DESIGN_CODES,
   FINISHES,
   FINISH_SERIES_MAP,
-  formatSize,
-  isValidSize,
 } from "@/features/inventory/constants/inventoryOptions";
 import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
 import type {
-  Batch,
-  BatchStatus,
   Finish,
+  InventoryItem,
+  InventoryItemStatus,
   Series,
-  SizeKey,
 } from "@/features/inventory/types/inventory.types";
 import useDebounce from "@/hooks/useDebounce";
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { PackageOpen } from "lucide-react";
 import { useMemo, useState } from "react";
 
-export const Route = createFileRoute("/_protected/inventory/$size")({
+export const Route = createFileRoute("/_protected/inventory-items/")({
   component: RouteComponent,
-  beforeLoad: ({ params }) => {
-    if (!isValidSize(params.size)) {
-      throw redirect({ to: "/inventory" });
-    }
-  },
   staticData: {
-    pageTitle: "Batch Management",
+    pageTitle: "Inventory",
+    hideBackButton: true,
   },
 });
 
@@ -67,84 +57,79 @@ const designOptions: SelectOption<string>[] = [
 
 const statusOptions: SelectOption<string>[] = [
   { label: "All statuses", value: "" },
-  { label: STATUS_LABEL.pending, value: "pending" },
-  { label: STATUS_LABEL.in_production, value: "in_production" },
-  { label: STATUS_LABEL.production_completed, value: "production_completed" },
+  { label: ITEM_STATUS_LABEL.unverified, value: "unverified" },
+  { label: ITEM_STATUS_LABEL.verified, value: "verified" },
+  { label: ITEM_STATUS_LABEL.on_the_way, value: "on_the_way" },
+  { label: ITEM_STATUS_LABEL.in_depot, value: "in_depot" },
+  { label: ITEM_STATUS_LABEL.sold, value: "sold" },
 ];
 
-interface PendingTransition {
-  batch: Batch;
-  next: BatchStatus;
+interface PendingItemTransition {
+  item: InventoryItem;
+  next: InventoryItemStatus;
 }
 
 function RouteComponent() {
-  const { size } = Route.useParams();
-  const typedSize = size as SizeKey;
-
-  const allBatches = useInventoryStore((s) => s.batches);
-  const deleteBatch = useInventoryStore((s) => s.deleteBatch);
-  const updateBatchStatus = useInventoryStore((s) => s.updateBatchStatus);
-
-  const sizeBatches = useMemo(
-    () => allBatches.filter((b) => b.size === typedSize),
-    [allBatches, typedSize],
-  );
+  const items = useInventoryStore((s) => s.items);
+  const batches = useInventoryStore((s) => s.batches);
+  const updateItemStatus = useInventoryStore((s) => s.updateItemStatus);
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
+  const [batchFilter, setBatchFilter] = useState("");
   const [finishFilter, setFinishFilter] = useState<Finish | "">("");
   const [seriesFilter, setSeriesFilter] = useState("");
   const [designFilter, setDesignFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+
+  const [pendingTransition, setPendingTransition] =
+    useState<PendingItemTransition | null>(null);
+
+  const batchOptions = useMemo<SelectOption<string>[]>(
+    () => [
+      { label: "All batches", value: "" },
+      ...batches.map((b) => ({ label: b.id, value: b.id })),
+    ],
+    [batches],
+  );
 
   const seriesOptions = useMemo(
     () => buildSeriesOptions(finishFilter),
     [finishFilter],
   );
 
-  const [isAddOpen, setIsAddOpen] = useState(false);
-  const [batchToDelete, setBatchToDelete] = useState<Batch | null>(null);
-  const [pendingTransition, setPendingTransition] =
-    useState<PendingTransition | null>(null);
-
-  const filteredBatches = useMemo(() => {
+  const filteredItems = useMemo(() => {
     const term = debouncedSearch.trim().toLowerCase();
-    return sizeBatches.filter((b) => {
-      if (term && !b.id.toLowerCase().includes(term)) return false;
-      if (finishFilter && b.finish !== finishFilter) return false;
-      if (seriesFilter && b.series !== seriesFilter) return false;
-      if (designFilter && b.designCode !== designFilter) return false;
-      if (statusFilter && b.status !== statusFilter) return false;
+    return items.filter((it) => {
+      if (term && !it.id.toLowerCase().includes(term)) return false;
+      if (batchFilter && it.batchId !== batchFilter) return false;
+      if (finishFilter && it.finish !== finishFilter) return false;
+      if (seriesFilter && it.series !== seriesFilter) return false;
+      if (designFilter && it.designCode !== designFilter) return false;
+      if (statusFilter && it.status !== statusFilter) return false;
       return true;
     });
   }, [
-    sizeBatches,
+    items,
     debouncedSearch,
+    batchFilter,
     finishFilter,
     seriesFilter,
     designFilter,
     statusFilter,
   ]);
 
-  const totalBoxes = sizeBatches.reduce((sum, b) => sum + b.boxes, 0);
-
-  const handleConfirmDelete = () => {
-    if (batchToDelete) {
-      deleteBatch(batchToDelete.id);
-      setBatchToDelete(null);
-    }
-  };
-
   const handleConfirmTransition = () => {
     if (!pendingTransition) return;
-    const { batch, next } = pendingTransition;
-    updateBatchStatus(batch.id, next);
-    toast.success(`Batch ${batch.id} marked as ${STATUS_LABEL[next]}`);
+    const { item, next } = pendingTransition;
+    updateItemStatus(item.id, next);
+    toast.success(`Item ${item.id} marked as ${ITEM_STATUS_LABEL[next]}`);
     setPendingTransition(null);
   };
 
   const hasActiveFilters =
     debouncedSearch.trim() !== "" ||
+    batchFilter !== "" ||
     finishFilter !== "" ||
     seriesFilter !== "" ||
     designFilter !== "" ||
@@ -157,7 +142,7 @@ function RouteComponent() {
       </div>
       <div className="text-center">
         <h6 className="text-nl-700 dark:text-nd-100 font-semibold">
-          No batches match your filters
+          No items match your filters
         </h6>
         <p className="text-nl-500 dark:text-nd-400 mt-1 text-sm">
           Try adjusting your search or filter criteria
@@ -168,23 +153,11 @@ function RouteComponent() {
 
   return (
     <div className="page-enter space-y-6 pb-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h4 className="text-nl-800 dark:text-nd-100 font-bold">
-            {formatSize(typedSize)} Batch Management
-          </h4>
-          <p className="text-nl-500 dark:text-nd-300 mt-1 text-sm">
-            Manage batches for {formatSize(typedSize)} tiles
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <SummaryChip label="Batches" value={sizeBatches.length} />
-          <SummaryChip label="Boxes" value={totalBoxes} />
-          <Button startIcon="Plus" onClick={() => setIsAddOpen(true)}>
-            Add Batch
-          </Button>
-        </div>
+      <div>
+        <h4 className="text-nl-800 dark:text-nd-100 font-bold">Inventory</h4>
+        <p className="text-nl-500 dark:text-nd-300 mt-1 text-sm">
+          Track inventory items through their lifecycle
+        </p>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -192,10 +165,24 @@ function RouteComponent() {
           <SearchInput
             val={search}
             setVal={setSearch}
-            placeholder="Search by batch number"
+            placeholder="Search by id"
           />
         </div>
         <div className="flex flex-wrap gap-3">
+          <SingleSelect
+            options={batchOptions}
+            value={
+              batchOptions.find((o) => o.value === batchFilter) ?? null
+            }
+            onChange={(v) =>
+              setBatchFilter(
+                (v as SelectOption<string> | null)?.value ?? "",
+              )
+            }
+            placeholder="Batch"
+            isSearchable
+            width={200}
+          />
           <SingleSelect
             options={finishOptions}
             value={
@@ -250,39 +237,23 @@ function RouteComponent() {
             }
             placeholder="Status"
             isSearchable={false}
-            width={190}
+            width={170}
           />
         </div>
       </div>
 
-      <BatchesTable
-        batches={filteredBatches}
-        onDelete={(batch) => setBatchToDelete(batch)}
-        onRequestStatusChange={(batch, next) =>
-          setPendingTransition({ batch, next })
+      <InventoryItemsTable
+        items={filteredItems}
+        onRequestStatusChange={(item, next) =>
+          setPendingTransition({ item, next })
         }
         emptyState={filteredEmptyState}
-      />
-
-      <AddBatchDialog
-        isOpen={isAddOpen}
-        close={() => setIsAddOpen(false)}
-        size={typedSize}
-      />
-
-      <DeleteDialog
-        isOpen={batchToDelete !== null}
-        close={() => setBatchToDelete(null)}
-        onDelete={handleConfirmDelete}
-        isDeleting={false}
-        name={batchToDelete?.id}
-        title="Delete Batch"
       />
 
       <Dialog
         isOpen={pendingTransition !== null}
         close={() => setPendingTransition(null)}
-        title="Change Batch Status"
+        title="Change Item Status"
         size="sm"
         actions={{
           primary: {
@@ -299,17 +270,17 @@ function RouteComponent() {
       >
         {pendingTransition && (
           <p className="text-nl-600 dark:text-nd-200 text-sm">
-            Change batch{" "}
+            Change item{" "}
             <span className="text-nl-800 dark:text-nd-50 font-mono font-semibold">
-              {pendingTransition.batch.id}
+              {pendingTransition.item.id}
             </span>{" "}
             from{" "}
             <span className="font-semibold">
-              {STATUS_LABEL[pendingTransition.batch.status]}
+              {ITEM_STATUS_LABEL[pendingTransition.item.status]}
             </span>{" "}
             to{" "}
             <span className="font-semibold">
-              {STATUS_LABEL[pendingTransition.next]}
+              {ITEM_STATUS_LABEL[pendingTransition.next]}
             </span>
             ?
           </p>
@@ -318,17 +289,3 @@ function RouteComponent() {
     </div>
   );
 }
-
-interface SummaryChipProps {
-  label: string;
-  value: number;
-}
-
-const SummaryChip: React.FC<SummaryChipProps> = ({ label, value }) => (
-  <div className="bg-nl-50 dark:bg-nd-800 border-nl-200 dark:border-nd-500 flex items-center gap-2 rounded-xl border px-3 py-2">
-    <span className="text-nl-500 dark:text-nd-400 text-xs">{label}</span>
-    <span className="text-nl-800 dark:text-nd-100 text-sm font-semibold">
-      {value}
-    </span>
-  </div>
-);

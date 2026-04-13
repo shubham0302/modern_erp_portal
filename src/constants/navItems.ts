@@ -8,19 +8,19 @@ export const NAV_ITEMS: NavItemTypes[] = [
     icon: "LayoutDashboard",
   },
   {
-    label: "Inventory",
+    label: "Batch Management",
     path: ROUTES.INVENTORY.ROOT,
     icon: "Package",
+  },
+  {
+    label: "Inventory",
+    path: ROUTES.INVENTORY_ITEMS,
+    icon: "Boxes",
   },
   {
     label: "Orders",
     path: ROUTES.ORDERS,
     icon: "ShoppingCart",
-  },
-  {
-    label: "Customers",
-    path: ROUTES.CUSTOMERS,
-    icon: "Users",
   },
   {
     label: "Reports",

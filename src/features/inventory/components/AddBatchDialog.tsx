@@ -187,6 +187,12 @@ const AddBatchDialog: React.FC<AddBatchDialogProps> = ({
                   setBoxesInput(e.target.value);
                   if (boxesError) setBoxesError("");
                 }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && boxesInput.trim() !== "") {
+                    e.preventDefault();
+                    handleSubmit();
+                  }
+                }}
                 error={boxesError}
                 fullWidth
               />
