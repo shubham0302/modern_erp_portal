@@ -9,11 +9,11 @@ export function hasPermissionAccess(
   permissions: UserPermissions,
 ): boolean {
   if (typeof permission === "string") {
-    return permissions[permission]?.read === true;
+    return permissions[permission]?.canRead === true;
   }
 
   if (Array.isArray(permission)) {
-    return permission.some((p) => permissions[p]?.read === true);
+    return permission.some((p) => permissions[p]?.canRead === true);
   }
 
   return false;

@@ -1,6 +1,6 @@
+import QueryStateHandler from "@/components/compound/QueryStateHandler";
 import SizeCard from "@/features/inventory/components/SizeCard";
-import { SIZES } from "@/features/inventory/constants/inventoryOptions";
-import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
+import { useInventorySizesQuery } from "@/features/inventory/inventoryQueries";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_protected/inventory/")({
@@ -12,16 +12,8 @@ export const Route = createFileRoute("/_protected/inventory/")({
 });
 
 function RouteComponent() {
-  const batches = useInventoryStore((s) => s.batches);
-
-  const statsBySize = SIZES.map((size) => {
-    const sizeBatches = batches.filter((b) => b.size === size);
-    return {
-      size,
-      batchCount: sizeBatches.length,
-      totalBoxes: sizeBatches.reduce((sum, b) => sum + b.boxes, 0),
-    };
-  });
+  const sizesQuery = useInventorySizesQuery();
+  const sizes = sizesQuery.data?.data ?? [];
 
   return (
     <div className="page-enter space-y-6 pb-8">
@@ -34,16 +26,31 @@ function RouteComponent() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {statsBySize.map(({ size, batchCount, totalBoxes }) => (
-          <SizeCard
-            key={size}
-            size={size}
-            batchCount={batchCount}
-            totalBoxes={totalBoxes}
-          />
-        ))}
-      </div>
+      <QueryStateHandler
+        query={sizesQuery}
+        loadingSkeleton={<SizeCardsSkeleton />}
+        emptyTitle="No tile sizes found"
+        isEmpty={sizes.length === 0}
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {sizes.map((size) => (
+            <SizeCard
+              key={size.id}
+              size={size.name}
+              batchCount={0}
+              totalBoxes={0}
+            />
+          ))}
+        </div>
+      </QueryStateHandler>
     </div>
   );
 }
+
+const SizeCardsSkeleton = () => (
+  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    {Array.from({ length: 6 }).map((_, i) => (
+      <div key={i} className="shimmer h-48 w-full rounded-2xl" />
+    ))}
+  </div>
+);

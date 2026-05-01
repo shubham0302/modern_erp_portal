@@ -1,11 +1,9 @@
 import { cn } from "@/utils/helpers";
 import { Link } from "@tanstack/react-router";
 import { ArrowUpRight, Layers, Package } from "lucide-react";
-import { formatSize } from "../constants/inventoryOptions";
-import type { SizeKey } from "../types/inventory.types";
 
 interface SizeCardProps {
-  size: SizeKey;
+  size: string;
   batchCount: number;
   totalBoxes: number;
 }
@@ -39,7 +37,7 @@ const SizeCard: React.FC<SizeCardProps> = ({
           Tile Size
         </p>
         <h3 className="text-nl-800 dark:text-nd-50 mt-1 text-3xl font-bold">
-          {formatSize(size)}
+          {size}
         </h3>
       </div>
 

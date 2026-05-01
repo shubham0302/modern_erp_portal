@@ -19,7 +19,15 @@ export interface PaginationMeta {
 }
 
 export interface BaseApiErrorResponse {
-  error?: string;
-  message?: string | string[];
   statusCode?: number;
+  errorCode?: string;
+  message?: string | string[];
+  requestId?: string;
+  details?: unknown;
+  path?: string;
+}
+
+export interface BaseApiErrorEnvelope {
+  success: false;
+  error: BaseApiErrorResponse;
 }

@@ -1,7 +1,5 @@
 import { IconButton } from "@/components/base/IconButton";
 import { useFileUpload } from "@/hooks/useFileUpload";
-import { useAuthStore } from "@/store/useAuthStore";
-import { PortalAccessUserTypeEnum } from "@/types/general.types";
 import type {
   UploadMeta,
   UploadResult,
@@ -44,8 +42,6 @@ const VideoUploaderField: React.FC<VideoUploaderFieldProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [playerError, setPlayerError] = useState<string | null>(null);
-  const userType = useAuthStore((s) => s.user?.userType);
-
   const getVideoUrl = (url: string): string => {
     if (
       url.startsWith("http") ||
@@ -72,19 +68,7 @@ const VideoUploaderField: React.FC<VideoUploaderFieldProps> = ({
     };
   }, [selectedFile]);
 
-  const getUploaderType = (): Uploader => {
-    switch (userType) {
-      case PortalAccessUserTypeEnum.franchise_owner:
-      case PortalAccessUserTypeEnum.franchise_staff:
-        return "franchise";
-      case PortalAccessUserTypeEnum.master_franchise_owner:
-      case PortalAccessUserTypeEnum.master_franchise_staff:
-        return "masterFranchise";
-      case PortalAccessUserTypeEnum.staff:
-      default:
-        return "staff";
-    }
-  };
+  const getUploaderType = (): Uploader => "staff";
 
   const handleFileSelect = async (file: File) => {
     setValidationError(null);

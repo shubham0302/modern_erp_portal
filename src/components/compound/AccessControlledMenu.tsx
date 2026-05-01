@@ -50,7 +50,7 @@ const AccessControlledMenu = ({
   feature,
   permissions,
   extraItems = [],
-  generalPermission = PermissionTypeEnum.read,
+  generalPermission = PermissionTypeEnum.canRead,
   noDefaultFill,
   size,
   onView,
@@ -64,24 +64,30 @@ const AccessControlledMenu = ({
     onClick: () => void;
   }[] = [];
 
-  if (onView && hasPermission(permissions, feature, PermissionTypeEnum.read)) {
+  if (
+    onView &&
+    hasPermission(permissions, feature, PermissionTypeEnum.canRead)
+  ) {
     items.push({ label: "View", icon: "Eye", onClick: onView });
   }
 
-  if (onEdit && hasPermission(permissions, feature, PermissionTypeEnum.write)) {
+  if (
+    onEdit &&
+    hasPermission(permissions, feature, PermissionTypeEnum.canWrite)
+  ) {
     items.push({ label: "Edit", icon: "Pencil", onClick: onEdit });
   }
 
   if (
     onDelete &&
-    hasPermission(permissions, feature, PermissionTypeEnum.delete)
+    hasPermission(permissions, feature, PermissionTypeEnum.canWrite)
   ) {
     items.push({ label: "Delete", icon: "Trash", onClick: onDelete });
   }
 
   if (
     onGoToDetails &&
-    hasPermission(permissions, feature, PermissionTypeEnum.read)
+    hasPermission(permissions, feature, PermissionTypeEnum.canRead)
   ) {
     items.push({
       label: "View Details",

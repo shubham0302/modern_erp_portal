@@ -1,6 +1,9 @@
 import { ROUTES } from "@/constants/routes";
 import { useAuthStore } from "@/store/useAuthStore";
-import { getDefaultPermissions, usePermissionStore } from "@/store/usePermissions";
+import {
+  getDefaultPermissions,
+  usePermissionStore,
+} from "@/store/usePermissions";
 import { TokenUtil } from "@/utils/tokenUtil";
 import { useRouter } from "@tanstack/react-router";
 import Dialog from "../compound/Dialog";
@@ -13,26 +16,18 @@ interface LogoutProps {
 const LogoutDialog: React.FC<LogoutProps> = (props) => {
   const { close, isOpen } = props;
 
-  const loginFail = useAuthStore((s) => s.loginFail);
-  const clearUser = useAuthStore((s) => s.clearUser);
+  const clearAuth = useAuthStore((s) => s.clearAuth);
   const router = useRouter();
 
   const handleLogout = () => {
-    // Clear token
-    TokenUtil.removeToken();
+    TokenUtil.clearTokens();
+    clearAuth();
 
-    // Clear auth state
-    clearUser();
-    loginFail();
-
-    // Clear React Query cache to remove all stale data
     router.options.context.queryClient.clear();
 
-    // Reset permission store to default (no permissions)
     const defaultPermissions = getDefaultPermissions();
     usePermissionStore.getState().setPermissions(defaultPermissions);
 
-    // Update router context so route guards see the new auth state
     router.update({
       context: {
         ...router.options.context,
@@ -41,10 +36,8 @@ const LogoutDialog: React.FC<LogoutProps> = (props) => {
       },
     });
 
-    // Invalidate router to force fresh state evaluation
     router.invalidate();
 
-    // Navigate to login
     router.navigate({ to: ROUTES.LOGIN });
   };
 

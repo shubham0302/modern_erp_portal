@@ -13,9 +13,12 @@ import { Route as ProtectedRouteRouteImport } from './routes/_protected/route'
 import { Route as AuthRouteRouteImport } from './routes/_auth/route'
 import { Route as ProtectedSettingsIndexRouteImport } from './routes/_protected/settings/index'
 import { Route as ProtectedReportsIndexRouteImport } from './routes/_protected/reports/index'
+import { Route as ProtectedProductionIndexRouteImport } from './routes/_protected/production/index'
 import { Route as ProtectedOrdersIndexRouteImport } from './routes/_protected/orders/index'
 import { Route as ProtectedInventoryIndexRouteImport } from './routes/_protected/inventory/index'
 import { Route as ProtectedInventoryItemsIndexRouteImport } from './routes/_protected/inventory-items/index'
+import { Route as ProtectedFinanceIndexRouteImport } from './routes/_protected/finance/index'
+import { Route as ProtectedDesignsIndexRouteImport } from './routes/_protected/designs/index'
 import { Route as ProtectedDashboardIndexRouteImport } from './routes/_protected/dashboard/index'
 import { Route as AuthLoginIndexRouteImport } from './routes/_auth/login/index'
 import { Route as ProtectedInventorySizeRouteImport } from './routes/_protected/inventory/$size'
@@ -38,6 +41,12 @@ const ProtectedReportsIndexRoute = ProtectedReportsIndexRouteImport.update({
   path: '/reports/',
   getParentRoute: () => ProtectedRouteRoute,
 } as any)
+const ProtectedProductionIndexRoute =
+  ProtectedProductionIndexRouteImport.update({
+    id: '/production/',
+    path: '/production/',
+    getParentRoute: () => ProtectedRouteRoute,
+  } as any)
 const ProtectedOrdersIndexRoute = ProtectedOrdersIndexRouteImport.update({
   id: '/orders/',
   path: '/orders/',
@@ -54,6 +63,16 @@ const ProtectedInventoryItemsIndexRoute =
     path: '/inventory-items/',
     getParentRoute: () => ProtectedRouteRoute,
   } as any)
+const ProtectedFinanceIndexRoute = ProtectedFinanceIndexRouteImport.update({
+  id: '/finance/',
+  path: '/finance/',
+  getParentRoute: () => ProtectedRouteRoute,
+} as any)
+const ProtectedDesignsIndexRoute = ProtectedDesignsIndexRouteImport.update({
+  id: '/designs/',
+  path: '/designs/',
+  getParentRoute: () => ProtectedRouteRoute,
+} as any)
 const ProtectedDashboardIndexRoute = ProtectedDashboardIndexRouteImport.update({
   id: '/dashboard/',
   path: '/dashboard/',
@@ -74,9 +93,12 @@ export interface FileRoutesByFullPath {
   '/inventory/$size': typeof ProtectedInventorySizeRoute
   '/login': typeof AuthLoginIndexRoute
   '/dashboard': typeof ProtectedDashboardIndexRoute
+  '/designs': typeof ProtectedDesignsIndexRoute
+  '/finance': typeof ProtectedFinanceIndexRoute
   '/inventory-items': typeof ProtectedInventoryItemsIndexRoute
   '/inventory': typeof ProtectedInventoryIndexRoute
   '/orders': typeof ProtectedOrdersIndexRoute
+  '/production': typeof ProtectedProductionIndexRoute
   '/reports': typeof ProtectedReportsIndexRoute
   '/settings': typeof ProtectedSettingsIndexRoute
 }
@@ -84,9 +106,12 @@ export interface FileRoutesByTo {
   '/inventory/$size': typeof ProtectedInventorySizeRoute
   '/login': typeof AuthLoginIndexRoute
   '/dashboard': typeof ProtectedDashboardIndexRoute
+  '/designs': typeof ProtectedDesignsIndexRoute
+  '/finance': typeof ProtectedFinanceIndexRoute
   '/inventory-items': typeof ProtectedInventoryItemsIndexRoute
   '/inventory': typeof ProtectedInventoryIndexRoute
   '/orders': typeof ProtectedOrdersIndexRoute
+  '/production': typeof ProtectedProductionIndexRoute
   '/reports': typeof ProtectedReportsIndexRoute
   '/settings': typeof ProtectedSettingsIndexRoute
 }
@@ -97,9 +122,12 @@ export interface FileRoutesById {
   '/_protected/inventory/$size': typeof ProtectedInventorySizeRoute
   '/_auth/login/': typeof AuthLoginIndexRoute
   '/_protected/dashboard/': typeof ProtectedDashboardIndexRoute
+  '/_protected/designs/': typeof ProtectedDesignsIndexRoute
+  '/_protected/finance/': typeof ProtectedFinanceIndexRoute
   '/_protected/inventory-items/': typeof ProtectedInventoryItemsIndexRoute
   '/_protected/inventory/': typeof ProtectedInventoryIndexRoute
   '/_protected/orders/': typeof ProtectedOrdersIndexRoute
+  '/_protected/production/': typeof ProtectedProductionIndexRoute
   '/_protected/reports/': typeof ProtectedReportsIndexRoute
   '/_protected/settings/': typeof ProtectedSettingsIndexRoute
 }
@@ -109,9 +137,12 @@ export interface FileRouteTypes {
     | '/inventory/$size'
     | '/login'
     | '/dashboard'
+    | '/designs'
+    | '/finance'
     | '/inventory-items'
     | '/inventory'
     | '/orders'
+    | '/production'
     | '/reports'
     | '/settings'
   fileRoutesByTo: FileRoutesByTo
@@ -119,9 +150,12 @@ export interface FileRouteTypes {
     | '/inventory/$size'
     | '/login'
     | '/dashboard'
+    | '/designs'
+    | '/finance'
     | '/inventory-items'
     | '/inventory'
     | '/orders'
+    | '/production'
     | '/reports'
     | '/settings'
   id:
@@ -131,9 +165,12 @@ export interface FileRouteTypes {
     | '/_protected/inventory/$size'
     | '/_auth/login/'
     | '/_protected/dashboard/'
+    | '/_protected/designs/'
+    | '/_protected/finance/'
     | '/_protected/inventory-items/'
     | '/_protected/inventory/'
     | '/_protected/orders/'
+    | '/_protected/production/'
     | '/_protected/reports/'
     | '/_protected/settings/'
   fileRoutesById: FileRoutesById
@@ -173,6 +210,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedReportsIndexRouteImport
       parentRoute: typeof ProtectedRouteRoute
     }
+    '/_protected/production/': {
+      id: '/_protected/production/'
+      path: '/production'
+      fullPath: '/production'
+      preLoaderRoute: typeof ProtectedProductionIndexRouteImport
+      parentRoute: typeof ProtectedRouteRoute
+    }
     '/_protected/orders/': {
       id: '/_protected/orders/'
       path: '/orders'
@@ -192,6 +236,20 @@ declare module '@tanstack/react-router' {
       path: '/inventory-items'
       fullPath: '/inventory-items'
       preLoaderRoute: typeof ProtectedInventoryItemsIndexRouteImport
+      parentRoute: typeof ProtectedRouteRoute
+    }
+    '/_protected/finance/': {
+      id: '/_protected/finance/'
+      path: '/finance'
+      fullPath: '/finance'
+      preLoaderRoute: typeof ProtectedFinanceIndexRouteImport
+      parentRoute: typeof ProtectedRouteRoute
+    }
+    '/_protected/designs/': {
+      id: '/_protected/designs/'
+      path: '/designs'
+      fullPath: '/designs'
+      preLoaderRoute: typeof ProtectedDesignsIndexRouteImport
       parentRoute: typeof ProtectedRouteRoute
     }
     '/_protected/dashboard/': {
@@ -233,9 +291,12 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 interface ProtectedRouteRouteChildren {
   ProtectedInventorySizeRoute: typeof ProtectedInventorySizeRoute
   ProtectedDashboardIndexRoute: typeof ProtectedDashboardIndexRoute
+  ProtectedDesignsIndexRoute: typeof ProtectedDesignsIndexRoute
+  ProtectedFinanceIndexRoute: typeof ProtectedFinanceIndexRoute
   ProtectedInventoryItemsIndexRoute: typeof ProtectedInventoryItemsIndexRoute
   ProtectedInventoryIndexRoute: typeof ProtectedInventoryIndexRoute
   ProtectedOrdersIndexRoute: typeof ProtectedOrdersIndexRoute
+  ProtectedProductionIndexRoute: typeof ProtectedProductionIndexRoute
   ProtectedReportsIndexRoute: typeof ProtectedReportsIndexRoute
   ProtectedSettingsIndexRoute: typeof ProtectedSettingsIndexRoute
 }
@@ -243,9 +304,12 @@ interface ProtectedRouteRouteChildren {
 const ProtectedRouteRouteChildren: ProtectedRouteRouteChildren = {
   ProtectedInventorySizeRoute: ProtectedInventorySizeRoute,
   ProtectedDashboardIndexRoute: ProtectedDashboardIndexRoute,
+  ProtectedDesignsIndexRoute: ProtectedDesignsIndexRoute,
+  ProtectedFinanceIndexRoute: ProtectedFinanceIndexRoute,
   ProtectedInventoryItemsIndexRoute: ProtectedInventoryItemsIndexRoute,
   ProtectedInventoryIndexRoute: ProtectedInventoryIndexRoute,
   ProtectedOrdersIndexRoute: ProtectedOrdersIndexRoute,
+  ProtectedProductionIndexRoute: ProtectedProductionIndexRoute,
   ProtectedReportsIndexRoute: ProtectedReportsIndexRoute,
   ProtectedSettingsIndexRoute: ProtectedSettingsIndexRoute,
 }

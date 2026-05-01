@@ -1,3 +1,47 @@
+export interface InventorySize {
+  id: string;
+  name: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  updatedBy: string;
+  updatedByPlatform: string;
+  updatedByName: string;
+}
+
+export interface InventoryFinish {
+  id: string;
+  name: string;
+  isActive: boolean;
+  sizes?: InventorySize[];
+  createdAt: string;
+  updatedAt: string;
+  updatedBy?: string;
+  updatedByPlatform?: string;
+  updatedByName?: string;
+}
+
+export interface InventorySizeFinish {
+  id: string;
+  size: InventorySize;
+  finish: InventoryFinish;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InventorySeries {
+  id: string;
+  name: string;
+  isActive: boolean;
+  sizeFinishes: InventorySizeFinish[];
+  createdAt: string;
+  updatedAt: string;
+  updatedBy?: string;
+  updatedByPlatform?: string;
+  updatedByName?: string;
+}
+
 export type Finish = "matt" | "glossy";
 
 export type GlossySeries = "GL" | "EL" | "PN";

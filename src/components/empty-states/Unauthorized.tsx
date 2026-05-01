@@ -16,7 +16,7 @@ const Unauthorized: React.FC<UnauthorizedProps> = ({ hideIcon, hideCta }) => {
   const targetRoute = redirectTo || getFirstAccessibleRoute(permissions);
   const logoutDialog = useToggle();
   const hasAnyPermission = Object.values(permissions).some(
-    (p) => p?.read === true,
+    (p) => p?.canRead === true,
   );
 
   return (

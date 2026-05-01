@@ -3,44 +3,48 @@ import {
   PermissionTypeEnum,
   type UserPermissions,
 } from "@/types/permissions.types";
+import type { ModuleAccess } from "@/types/staff.types";
 import { create } from "zustand";
 
 interface PermissionsState {
   permissions: UserPermissions;
   setPermissions: (permissions: UserPermissions) => void;
+  setPermissionsFromModuleAccess: (moduleAccess: ModuleAccess) => void;
+  resetPermissions: () => void;
 }
 
 export const getDefaultPermissions = (): UserPermissions => {
   const defaultPermissionTypes: Record<PermissionTypeEnum, boolean> = {
-    [PermissionTypeEnum.read]: false,
-    [PermissionTypeEnum.write]: false,
-    [PermissionTypeEnum.delete]: false,
+    [PermissionTypeEnum.canRead]: false,
+    [PermissionTypeEnum.canWrite]: false,
   };
 
-  const permissions: UserPermissions = Object.keys(
-    PermissionFeaturesEnum,
-  ).reduce((acc, feature) => {
-    const featureKey = feature as keyof typeof PermissionFeaturesEnum;
-    acc[PermissionFeaturesEnum[featureKey]] = { ...defaultPermissionTypes };
+  return Object.values(PermissionFeaturesEnum).reduce((acc, feature) => {
+    acc[feature] = { ...defaultPermissionTypes };
     return acc;
   }, {} as UserPermissions);
-  return permissions;
+};
+
+export const moduleAccessToPermissions = (
+  moduleAccess: ModuleAccess,
+): UserPermissions => {
+  return Object.values(PermissionFeaturesEnum).reduce((acc, feature) => {
+    const entry = moduleAccess[feature];
+    acc[feature] = {
+      [PermissionTypeEnum.canRead]: entry?.canRead ?? false,
+      [PermissionTypeEnum.canWrite]: entry?.canWrite ?? false,
+    };
+    return acc;
+  }, {} as UserPermissions);
 };
 
 export const usePermissionStore = create<PermissionsState>((set) => ({
   permissions: getDefaultPermissions(),
 
-  setPermissions: (partial) =>
-    set((state) => {
-      const updated: UserPermissions = { ...state.permissions };
+  setPermissions: (permissions) => set({ permissions }),
 
-      for (const feature of Object.keys(partial) as PermissionFeaturesEnum[]) {
-        updated[feature] = {
-          ...updated[feature],
-          ...(partial[feature] ?? {}),
-        };
-      }
+  setPermissionsFromModuleAccess: (moduleAccess) =>
+    set({ permissions: moduleAccessToPermissions(moduleAccess) }),
 
-      return { permissions: updated };
-    }),
+  resetPermissions: () => set({ permissions: getDefaultPermissions() }),
 }));

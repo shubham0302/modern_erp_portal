@@ -24,14 +24,10 @@ export const getFeaturePermissions = (
   feature: PermissionFeaturesEnum,
   permissions: UserPermissions,
 ) => ({
-  canRead: hasAccess(feature, permissions, [PermissionTypeEnum.read]),
+  canRead: hasAccess(feature, permissions, [PermissionTypeEnum.canRead]),
   canWrite: hasAccess(feature, permissions, [
-    PermissionTypeEnum.read,
-    PermissionTypeEnum.write,
-  ]),
-  canDelete: hasAccess(feature, permissions, [
-    PermissionTypeEnum.read,
-    PermissionTypeEnum.delete,
+    PermissionTypeEnum.canRead,
+    PermissionTypeEnum.canWrite,
   ]),
 });
 
@@ -41,17 +37,16 @@ export const hasAnyActionPermission = (
   const {
     permissions,
     feature,
-    generalPermission = PermissionTypeEnum.read,
+    generalPermission = PermissionTypeEnum.canRead,
   } = options;
 
   const builtinActions: [
     keyof AccessControlledMenuProps,
     PermissionTypeEnum,
   ][] = [
-    ["onView", PermissionTypeEnum.read],
-    ["onEdit", PermissionTypeEnum.write],
-    ["onDelete", PermissionTypeEnum.delete],
-    ["onGoToDetails", PermissionTypeEnum.read],
+    ["onView", PermissionTypeEnum.canRead],
+    ["onEdit", PermissionTypeEnum.canWrite],
+    ["onGoToDetails", PermissionTypeEnum.canRead],
   ];
 
   for (const [key, perm] of builtinActions) {

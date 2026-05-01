@@ -1,15 +1,15 @@
 export enum PermissionFeaturesEnum {
   dashboard = "dashboard",
+  designs = "designs",
   inventory = "inventory",
-  orders = "orders",
-  reports = "reports",
-  settings = "settings",
+  production = "production",
+  order = "order",
+  finance = "finance",
 }
 
 export enum PermissionTypeEnum {
-  read = "read",
-  write = "write",
-  delete = "delete",
+  canRead = "canRead",
+  canWrite = "canWrite",
 }
 
 export type PermissionTypes = {

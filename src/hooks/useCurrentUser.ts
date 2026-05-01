@@ -1,13 +1,11 @@
 import { useAuthStore } from "@/store/useAuthStore";
 
 export const useCurrentUser = () => {
-  const user = useAuthStore((s) => s.user);
+  const staff = useAuthStore((s) => s.staff);
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
 
-  const initials = user?.name?.[0]?.toUpperCase() || "U";
-  const displayRole = user?.roles?.[0]
-    ? user.roles[0].charAt(0).toUpperCase() + user.roles[0].slice(1)
-    : "User";
+  const initials = staff?.name?.[0]?.toUpperCase() || "U";
+  const displayRole = staff?.role?.name ?? "User";
 
-  return { user, isLoggedIn, initials, displayRole };
+  return { user: staff, staff, isLoggedIn, initials, displayRole };
 };
