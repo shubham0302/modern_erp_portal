@@ -2,39 +2,35 @@ import { Button } from "@/components/base/Button";
 import { IconButton } from "@/components/base/IconButton";
 import { Table, type TableColumn } from "@/components/compound/table/Table";
 import { cn } from "@/utils/helpers";
-import { PackageOpen, Trash2 } from "lucide-react";
-import type {
-  Batch,
-  BatchStatus,
-  Finish,
-  Series,
-} from "../types/inventory.types";
+import { PackageOpen, Pencil } from "lucide-react";
+import type { Batch, BatchStatus } from "../types/inventory.types";
 
 interface BatchesTableProps {
   batches: Batch[];
-  onDelete: (batch: Batch) => void;
   onRequestStatusChange: (batch: Batch, next: BatchStatus) => void;
+  onEdit: (batch: Batch) => void;
   emptyState?: React.ReactNode;
+  canWrite?: boolean;
 }
 
-const finishStyles: Record<Finish, string> = {
-  glossy: "bg-t-blue/10 text-t-blue dark:bg-t-blue/15 dark:text-t-blue",
-  matt: "bg-t-amber/10 text-t-amber dark:bg-t-amber/15 dark:text-t-amber",
-};
+const TAG_PALETTE = [
+  "bg-t-blue/10 text-t-blue dark:bg-t-blue/15 dark:text-t-blue",
+  "bg-t-amber/10 text-t-amber dark:bg-t-amber/15 dark:text-t-amber",
+  "bg-t-indigo/10 text-t-indigo",
+  "bg-t-violet/10 text-t-violet",
+  "bg-t-pink/10 text-t-pink",
+  "bg-t-peach/10 text-t-peach",
+  "bg-t-green/10 text-t-green",
+  "bg-t-yellow/10 text-t-yellow",
+  "bg-t-purple/10 text-t-purple",
+];
 
-const finishLabel: Record<Finish, string> = {
-  glossy: "Glossy",
-  matt: "Matt",
-};
-
-const seriesTint: Record<Series, string> = {
-  GL: "bg-t-indigo/10 text-t-indigo",
-  EL: "bg-t-violet/10 text-t-violet",
-  PN: "bg-t-pink/10 text-t-pink",
-  SF: "bg-t-peach/10 text-t-peach",
-  WF: "bg-t-green/10 text-t-green",
-  TZ: "bg-t-yellow/10 text-t-yellow",
-  PF: "bg-t-purple/10 text-t-purple",
+const tagStyle = (value: string): string => {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+  }
+  return TAG_PALETTE[hash % TAG_PALETTE.length];
 };
 
 const statusStyles: Record<BatchStatus, string> = {
@@ -79,9 +75,10 @@ const formatRelativeTime = (iso: string): string => {
 
 const BatchesTable: React.FC<BatchesTableProps> = ({
   batches,
-  onDelete,
   onRequestStatusChange,
+  onEdit,
   emptyState,
+  canWrite = true,
 }) => {
   const columns: TableColumn<Batch>[] = [
     {
@@ -96,25 +93,25 @@ const BatchesTable: React.FC<BatchesTableProps> = ({
     {
       header: "Finish",
       accessor: "finish",
-      cell: (value: Finish) => (
+      cell: (value: string) => (
         <span
           className={cn(
             "inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-medium",
-            finishStyles[value],
+            tagStyle(value),
           )}
         >
-          {finishLabel[value]}
+          {value}
         </span>
       ),
     },
     {
       header: "Series",
       accessor: "series",
-      cell: (value: Series) => (
+      cell: (value: string) => (
         <span
           className={cn(
             "inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-semibold",
-            seriesTint[value],
+            tagStyle(value),
           )}
         >
           {value}
@@ -168,6 +165,9 @@ const BatchesTable: React.FC<BatchesTableProps> = ({
       className: "w-48",
       cell: (_value, row) => {
         const next = getNextStatus(row.status);
+        if (!canWrite) {
+          return <span className="text-nl-400 dark:text-nd-500 text-xs">—</span>;
+        }
         return (
           <div className="flex items-center gap-2">
             {next ? (
@@ -187,11 +187,11 @@ const BatchesTable: React.FC<BatchesTableProps> = ({
             )}
             {row.status === "pending" && (
               <IconButton
-                icon={Trash2}
+                icon={Pencil}
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onDelete(row);
+                  onEdit(row);
                 }}
               />
             )}

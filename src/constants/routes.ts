@@ -3,7 +3,7 @@ export const ROUTES = {
   DESIGNS: "/designs",
   INVENTORY: {
     ROOT: "/inventory",
-    SIZE: (size: string) => `/inventory/${size}`,
+    SIZE: (sizeId: string) => `/inventory/${sizeId}`,
   },
   PRODUCTION: "/production",
   ORDERS: "/orders",

@@ -15,8 +15,11 @@ import type {
 } from "@/features/designs/types/designs.types";
 import { useInventorySeriesQuery } from "@/features/inventory/inventoryQueries";
 import type { InventorySizeFinish } from "@/features/inventory/types/inventory.types";
+import { usePermissionStore } from "@/store/usePermissions";
+import { PermissionFeaturesEnum } from "@/types/permissions.types";
 import { prettyDate } from "@/utils/formatDateTime";
 import { cn } from "@/utils/helpers";
+import { getFeaturePermissions } from "@/utils/rbac";
 import { createFileRoute } from "@tanstack/react-router";
 import { Check } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -56,6 +59,12 @@ const formatStatus = (status: DesignStatus): string =>
   status.charAt(0).toUpperCase() + status.slice(1);
 
 function RouteComponent() {
+  const permissions = usePermissionStore((s) => s.permissions);
+  const { canWrite } = getFeaturePermissions(
+    PermissionFeaturesEnum.designs,
+    permissions,
+  );
+
   const designsQuery = useDesignsQuery();
   const designs = designsQuery.data?.data ?? [];
 
@@ -222,9 +231,11 @@ function RouteComponent() {
             width={220}
             isLoading={seriesQuery.isLoading}
           />
-          <Button startIcon="Plus" onClick={openAdd}>
-            Add Design Code
-          </Button>
+          {canWrite && (
+            <Button startIcon="Plus" onClick={openAdd}>
+              Add Design Code
+            </Button>
+          )}
         </div>
 
         <QueryStateHandler

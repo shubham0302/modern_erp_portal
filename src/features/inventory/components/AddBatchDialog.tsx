@@ -3,32 +3,36 @@ import Dialog from "@/components/compound/Dialog";
 import { toast } from "@/components/compound/Sonner";
 import { cn } from "@/utils/helpers";
 import { Check } from "lucide-react";
-import { useEffect, useState } from "react";
-import {
-  DESIGN_CODES,
-  FINISHES,
-  formatSize,
-  getSeriesForFinish,
-} from "../constants/inventoryOptions";
-import { useInventoryStore } from "../store/useInventoryStore";
-import type { Finish, Series, SizeKey } from "../types/inventory.types";
+import { useEffect, useMemo, useState } from "react";
+import { formatSize } from "../constants/inventoryOptions";
+import { useCreateBatchMutation } from "../inventoryQueries";
+import type { InventoryDesign, SizeKey } from "../types/inventory.types";
 
 interface AddBatchDialogProps {
   isOpen: boolean;
   close: () => void;
   size: SizeKey;
+  sizeId: string;
+  designs: InventoryDesign[];
+}
+
+interface NamedRecord {
+  id: string;
+  name: string;
 }
 
 const AddBatchDialog: React.FC<AddBatchDialogProps> = ({
   isOpen,
   close,
   size,
+  sizeId,
+  designs,
 }) => {
-  const addBatch = useInventoryStore((s) => s.addBatch);
+  const createBatchMutation = useCreateBatchMutation();
 
-  const [finish, setFinish] = useState<Finish | null>(null);
-  const [series, setSeries] = useState<Series | null>(null);
-  const [designCode, setDesignCode] = useState<string | null>(null);
+  const [finishId, setFinishId] = useState<string | null>(null);
+  const [seriesId, setSeriesId] = useState<string | null>(null);
+  const [designId, setDesignId] = useState<string | null>(null);
   const [boxesInput, setBoxesInput] = useState<string>("");
   const [boxesError, setBoxesError] = useState<string>("");
 
@@ -36,9 +40,9 @@ const AddBatchDialog: React.FC<AddBatchDialogProps> = ({
   useEffect(() => {
     if (!isOpen) {
       const t = setTimeout(() => {
-        setFinish(null);
-        setSeries(null);
-        setDesignCode(null);
+        setFinishId(null);
+        setSeriesId(null);
+        setDesignId(null);
         setBoxesInput("");
         setBoxesError("");
       }, 200);
@@ -46,26 +50,65 @@ const AddBatchDialog: React.FC<AddBatchDialogProps> = ({
     }
   }, [isOpen]);
 
-  const handleFinishChange = (value: Finish) => {
-    if (value === finish) return;
-    setFinish(value);
-    setSeries(null);
-    setDesignCode(null);
+  const finishOptions = useMemo<NamedRecord[]>(() => {
+    const map = new Map<string, NamedRecord>();
+    for (const d of designs) {
+      for (const sf of d.sizeFinishes) {
+        if (sf.size.id === sizeId && !map.has(sf.finish.id)) {
+          map.set(sf.finish.id, { id: sf.finish.id, name: sf.finish.name });
+        }
+      }
+    }
+    return [...map.values()];
+  }, [designs, sizeId]);
+
+  const seriesOptions = useMemo<NamedRecord[]>(() => {
+    if (!finishId) return [];
+    const map = new Map<string, NamedRecord>();
+    for (const d of designs) {
+      const matches = d.sizeFinishes.some(
+        (sf) => sf.size.id === sizeId && sf.finish.id === finishId,
+      );
+      if (matches && !map.has(d.series.id)) {
+        map.set(d.series.id, { id: d.series.id, name: d.series.name });
+      }
+    }
+    return [...map.values()];
+  }, [designs, finishId, sizeId]);
+
+  const designOptions = useMemo<NamedRecord[]>(() => {
+    if (!finishId || !seriesId) return [];
+    return designs
+      .filter(
+        (d) =>
+          d.series.id === seriesId &&
+          d.sizeFinishes.some(
+            (sf) => sf.size.id === sizeId && sf.finish.id === finishId,
+          ),
+      )
+      .map((d) => ({ id: d.id, name: d.name }));
+  }, [designs, finishId, seriesId, sizeId]);
+
+  const handleFinishChange = (value: string) => {
+    if (value === finishId) return;
+    setFinishId(value);
+    setSeriesId(null);
+    setDesignId(null);
     setBoxesInput("");
     setBoxesError("");
   };
 
-  const handleSeriesChange = (value: Series) => {
-    if (value === series) return;
-    setSeries(value);
-    setDesignCode(null);
+  const handleSeriesChange = (value: string) => {
+    if (value === seriesId) return;
+    setSeriesId(value);
+    setDesignId(null);
     setBoxesInput("");
     setBoxesError("");
   };
 
   const handleDesignChange = (value: string) => {
-    if (value === designCode) return;
-    setDesignCode(value);
+    if (value === designId) return;
+    setDesignId(value);
     setBoxesInput("");
     setBoxesError("");
   };
@@ -75,7 +118,10 @@ const AddBatchDialog: React.FC<AddBatchDialogProps> = ({
     boxesInput !== "" && Number.isInteger(boxesValue) && boxesValue >= 1;
 
   const canSubmit =
-    finish !== null && series !== null && designCode !== null && isBoxesValid;
+    finishId !== null &&
+    seriesId !== null &&
+    designId !== null &&
+    isBoxesValid;
 
   const handleSubmit = () => {
     if (!canSubmit) {
@@ -85,19 +131,35 @@ const AddBatchDialog: React.FC<AddBatchDialogProps> = ({
       return;
     }
 
-    const batch = addBatch({
-      size,
-      finish: finish!,
-      series: series!,
-      designCode: designCode!,
-      boxes: boxesValue,
-    });
+    const design = designs.find((d) => d.id === designId);
+    if (!design) return;
 
-    toast.success(`Batch ${batch.id} added`);
-    close();
+    const sizeFinish = design.sizeFinishes.find(
+      (sf) => sf.size.id === sizeId && sf.finish.id === finishId,
+    );
+    if (!sizeFinish) {
+      toast.error("Selected size and finish are not available for this design");
+      return;
+    }
+
+    createBatchMutation.mutate(
+      {
+        designId: design.id,
+        sizeFinishId: sizeFinish.id,
+        sizeId,
+        numberOfBoxes: boxesValue,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Batch added");
+          close();
+        },
+      },
+    );
   };
 
-  const seriesOptions = finish ? getSeriesForFinish(finish) : [];
+  const isEmpty = finishOptions.length === 0;
+  const isSubmitting = createBatchMutation.isPending;
 
   return (
     <Dialog
@@ -111,93 +173,105 @@ const AddBatchDialog: React.FC<AddBatchDialogProps> = ({
         primary: {
           label: "Add Batch",
           onClick: handleSubmit,
-          disabled: !canSubmit,
+          disabled: !canSubmit || isSubmitting,
+          loading: isSubmitting,
         },
         secondary: {
           label: "Cancel",
           onClick: close,
           variant: "filled",
           color: "neutral",
+          disabled: isSubmitting,
         },
       }}
     >
       <div className="space-y-5">
-        {/* Step 1: Finish */}
-        <FieldGroup label="Finish" step={1}>
-          <div className="flex flex-wrap gap-2">
-            {FINISHES.map((opt) => (
-              <PillButton
-                key={opt.value}
-                label={opt.label}
-                selected={finish === opt.value}
-                onClick={() => handleFinishChange(opt.value)}
-              />
-            ))}
+        {isEmpty && (
+          <div className="text-nl-500 dark:text-nd-300 py-8 text-center text-sm">
+            No approved designs are available for this size yet.
           </div>
-        </FieldGroup>
+        )}
 
-        {/* Step 2: Series */}
-        {finish && (
-          <div className="page-enter">
-            <FieldGroup label="Series" step={2}>
+        {!isEmpty && (
+          <>
+            {/* Step 1: Finish */}
+            <FieldGroup label="Finish" step={1}>
               <div className="flex flex-wrap gap-2">
-                {seriesOptions.map((opt) => (
+                {finishOptions.map((opt) => (
                   <PillButton
-                    key={opt}
-                    label={opt}
-                    selected={series === opt}
-                    onClick={() => handleSeriesChange(opt)}
+                    key={opt.id}
+                    label={opt.name}
+                    selected={finishId === opt.id}
+                    onClick={() => handleFinishChange(opt.id)}
                   />
                 ))}
               </div>
             </FieldGroup>
-          </div>
-        )}
 
-        {/* Step 3: Design Code */}
-        {series && (
-          <div className="page-enter">
-            <FieldGroup label="Design Code" step={3}>
-              <div className="flex flex-wrap gap-2">
-                {DESIGN_CODES.map((opt) => (
-                  <PillButton
-                    key={opt}
-                    label={opt}
-                    selected={designCode === opt}
-                    onClick={() => handleDesignChange(opt)}
-                  />
-                ))}
+            {/* Step 2: Series */}
+            {finishId && (
+              <div className="page-enter">
+                <FieldGroup label="Series" step={2}>
+                  <div className="flex flex-wrap gap-2">
+                    {seriesOptions.map((opt) => (
+                      <PillButton
+                        key={opt.id}
+                        label={opt.name}
+                        selected={seriesId === opt.id}
+                        onClick={() => handleSeriesChange(opt.id)}
+                      />
+                    ))}
+                  </div>
+                </FieldGroup>
               </div>
-            </FieldGroup>
-          </div>
-        )}
+            )}
 
-        {/* Step 4: Boxes */}
-        {designCode && (
-          <div className="page-enter">
-            <FieldGroup label="Expected Boxes" step={4}>
-              <Input
-                type="number"
-                inputMode="numeric"
-                min={1}
-                step={1}
-                placeholder="e.g. 25"
-                value={boxesInput}
-                onChange={(e) => {
-                  setBoxesInput(e.target.value);
-                  if (boxesError) setBoxesError("");
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && boxesInput.trim() !== "") {
-                    e.preventDefault();
-                    handleSubmit();
-                  }
-                }}
-                error={boxesError}
-                fullWidth
-              />
-            </FieldGroup>
-          </div>
+            {/* Step 3: Design */}
+            {seriesId && (
+              <div className="page-enter">
+                <FieldGroup label="Design Code" step={3}>
+                  <div className="flex flex-wrap gap-2">
+                    {designOptions.map((opt) => (
+                      <PillButton
+                        key={opt.id}
+                        label={opt.name}
+                        selected={designId === opt.id}
+                        onClick={() => handleDesignChange(opt.id)}
+                      />
+                    ))}
+                  </div>
+                </FieldGroup>
+              </div>
+            )}
+
+            {/* Step 4: Boxes */}
+            {designId && (
+              <div className="page-enter">
+                <FieldGroup label="Expected Boxes" step={4}>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    step={1}
+                    placeholder="e.g. 25"
+                    value={boxesInput}
+                    onChange={(e) => {
+                      setBoxesInput(e.target.value);
+                      if (boxesError) setBoxesError("");
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && boxesInput.trim() !== "") {
+                        e.preventDefault();
+                        handleSubmit();
+                      }
+                    }}
+                    error={boxesError}
+                    fullWidth
+                  />
+                </FieldGroup>
+              </div>
+            )}
+          </>
         )}
       </div>
     </Dialog>

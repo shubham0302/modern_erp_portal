@@ -1,69 +1,44 @@
 import { Button } from "@/components/base/Button";
 import { SingleSelect, type SelectOption } from "@/components/base/Select";
-import DeleteDialog from "@/components/compound/DeleteDialog";
 import Dialog from "@/components/compound/Dialog";
+import QueryStateHandler from "@/components/compound/QueryStateHandler";
 import SearchInput from "@/components/compound/SearchInput";
 import { toast } from "@/components/compound/Sonner";
 import AddBatchDialog from "@/features/inventory/components/AddBatchDialog";
 import BatchesTable, {
   STATUS_LABEL,
 } from "@/features/inventory/components/BatchesTable";
+import EditBatchDialog from "@/features/inventory/components/EditBatchDialog";
+import { formatSize } from "@/features/inventory/constants/inventoryOptions";
 import {
-  DESIGN_CODES,
-  FINISHES,
-  FINISH_SERIES_MAP,
-  formatSize,
-  isValidSize,
-} from "@/features/inventory/constants/inventoryOptions";
-import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
+  useBatchesBySizeQuery,
+  useCompleteBatchProductionMutation,
+  useDesignsBySizeQuery,
+  useInventorySizesQuery,
+  useStartBatchProductionMutation,
+} from "@/features/inventory/inventoryQueries";
 import type {
   Batch,
+  BatchListItem,
   BatchStatus,
-  Finish,
-  Series,
+  InventoryDesign,
+  InventorySize,
   SizeKey,
 } from "@/features/inventory/types/inventory.types";
 import useDebounce from "@/hooks/useDebounce";
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { usePermissionStore } from "@/store/usePermissions";
+import { PermissionFeaturesEnum } from "@/types/permissions.types";
+import { getFeaturePermissions } from "@/utils/rbac";
+import { createFileRoute } from "@tanstack/react-router";
 import { PackageOpen } from "lucide-react";
 import { useMemo, useState } from "react";
 
 export const Route = createFileRoute("/_protected/inventory/$size")({
   component: RouteComponent,
-  beforeLoad: ({ params }) => {
-    if (!isValidSize(params.size)) {
-      throw redirect({ to: "/inventory" });
-    }
-  },
   staticData: {
     pageTitle: "Batch Management",
   },
 });
-
-const ALL_SERIES: Series[] = [
-  ...FINISH_SERIES_MAP.glossy,
-  ...FINISH_SERIES_MAP.matt,
-];
-
-const finishOptions: SelectOption<string>[] = [
-  { label: "All finishes", value: "" },
-  ...FINISHES.map((f) => ({ label: f.label, value: f.value })),
-];
-
-const buildSeriesOptions = (
-  finish: Finish | "",
-): SelectOption<string>[] => {
-  const list = finish ? FINISH_SERIES_MAP[finish] : ALL_SERIES;
-  return [
-    { label: "All series", value: "" },
-    ...list.map((s) => ({ label: s, value: s })),
-  ];
-};
-
-const designOptions: SelectOption<string>[] = [
-  { label: "All designs", value: "" },
-  ...DESIGN_CODES.map((d) => ({ label: d, value: d })),
-];
 
 const statusOptions: SelectOption<string>[] = [
   { label: "All statuses", value: "" },
@@ -72,38 +47,173 @@ const statusOptions: SelectOption<string>[] = [
   { label: STATUS_LABEL.production_completed, value: "production_completed" },
 ];
 
+interface NamedRecord {
+  id: string;
+  name: string;
+}
+
+const buildFinishOptions = (
+  designs: InventoryDesign[],
+  sizeId: string,
+): NamedRecord[] => {
+  const map = new Map<string, NamedRecord>();
+  for (const d of designs) {
+    for (const sf of d.sizeFinishes) {
+      if (sf.size.id === sizeId && !map.has(sf.finish.name)) {
+        map.set(sf.finish.name, { id: sf.finish.id, name: sf.finish.name });
+      }
+    }
+  }
+  return [...map.values()];
+};
+
+const buildSeriesOptions = (
+  designs: InventoryDesign[],
+  sizeId: string,
+  finishName: string,
+): NamedRecord[] => {
+  const map = new Map<string, NamedRecord>();
+  for (const d of designs) {
+    const matchesFinish = finishName
+      ? d.sizeFinishes.some(
+          (sf) => sf.size.id === sizeId && sf.finish.name === finishName,
+        )
+      : d.sizeFinishes.some((sf) => sf.size.id === sizeId);
+    if (matchesFinish && !map.has(d.series.name)) {
+      map.set(d.series.name, { id: d.series.id, name: d.series.name });
+    }
+  }
+  return [...map.values()];
+};
+
+const buildDesignOptions = (
+  designs: InventoryDesign[],
+  sizeId: string,
+  finishName: string,
+  seriesName: string,
+): NamedRecord[] => {
+  const map = new Map<string, NamedRecord>();
+  for (const d of designs) {
+    const matchesSize = d.sizeFinishes.some((sf) => sf.size.id === sizeId);
+    if (!matchesSize) continue;
+    if (seriesName && d.series.name !== seriesName) continue;
+    if (
+      finishName &&
+      !d.sizeFinishes.some(
+        (sf) => sf.size.id === sizeId && sf.finish.name === finishName,
+      )
+    ) {
+      continue;
+    }
+    if (!map.has(d.name)) map.set(d.name, { id: d.id, name: d.name });
+  }
+  return [...map.values()];
+};
+
+const toSelectOptions = (
+  records: NamedRecord[],
+  allLabel: string,
+): SelectOption<string>[] => [
+  { label: allLabel, value: "" },
+  ...records.map((r) => ({ label: r.name, value: r.name })),
+];
+
 interface PendingTransition {
   batch: Batch;
   next: BatchStatus;
 }
 
+const toFlatBatch = (item: BatchListItem, size: SizeKey): Batch => ({
+  apiId: item.id,
+  id: item.batchId,
+  size,
+  finish: item.sizeFinish.finish.name,
+  series: item.design.series.name,
+  designCode: item.design.name,
+  boxes: item.numberOfBoxes,
+  status: item.status,
+  createdAt: item.createdAt,
+});
+
 function RouteComponent() {
-  const { size } = Route.useParams();
-  const typedSize = size as SizeKey;
+  const { size: sizeId } = Route.useParams();
+  const sizesQuery = useInventorySizesQuery();
+  const sizeRecord = sizesQuery.data?.data.find((s) => s.id === sizeId) ?? null;
 
-  const allBatches = useInventoryStore((s) => s.batches);
-  const deleteBatch = useInventoryStore((s) => s.deleteBatch);
-  const updateBatchStatus = useInventoryStore((s) => s.updateBatchStatus);
+  return (
+    <QueryStateHandler
+      query={sizesQuery}
+      loadingSkeleton={<BatchPageSkeleton />}
+      emptyTitle="Tile size not found"
+      isEmpty={!sizesQuery.isLoading && sizeRecord === null}
+    >
+      {sizeRecord && <BatchManagementView sizeRecord={sizeRecord} />}
+    </QueryStateHandler>
+  );
+}
 
-  const sizeBatches = useMemo(
-    () => allBatches.filter((b) => b.size === typedSize),
-    [allBatches, typedSize],
+interface BatchManagementViewProps {
+  sizeRecord: InventorySize;
+}
+
+function BatchManagementView({ sizeRecord }: BatchManagementViewProps) {
+  const typedSize = sizeRecord.name as SizeKey;
+
+  const permissions = usePermissionStore((s) => s.permissions);
+  const { canWrite } = getFeaturePermissions(
+    PermissionFeaturesEnum.inventory,
+    permissions,
+  );
+
+  const designsQuery = useDesignsBySizeQuery(sizeRecord.id);
+  const designs = useMemo(
+    () => designsQuery.data?.data ?? [],
+    [designsQuery.data],
+  );
+
+  const batchesQuery = useBatchesBySizeQuery(sizeRecord.id);
+  const startProductionMutation = useStartBatchProductionMutation();
+  const completeProductionMutation = useCompleteBatchProductionMutation();
+  const sizeBatches = useMemo<Batch[]>(
+    () =>
+      (batchesQuery.data?.data ?? []).map((item) =>
+        toFlatBatch(item, typedSize),
+      ),
+    [batchesQuery.data, typedSize],
   );
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
-  const [finishFilter, setFinishFilter] = useState<Finish | "">("");
+  const [finishFilter, setFinishFilter] = useState("");
   const [seriesFilter, setSeriesFilter] = useState("");
   const [designFilter, setDesignFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
+  const finishOptions = useMemo(
+    () => toSelectOptions(buildFinishOptions(designs, sizeRecord.id), "All finishes"),
+    [designs, sizeRecord.id],
+  );
+
   const seriesOptions = useMemo(
-    () => buildSeriesOptions(finishFilter),
-    [finishFilter],
+    () =>
+      toSelectOptions(
+        buildSeriesOptions(designs, sizeRecord.id, finishFilter),
+        "All series",
+      ),
+    [designs, sizeRecord.id, finishFilter],
+  );
+
+  const designOptions = useMemo(
+    () =>
+      toSelectOptions(
+        buildDesignOptions(designs, sizeRecord.id, finishFilter, seriesFilter),
+        "All designs",
+      ),
+    [designs, sizeRecord.id, finishFilter, seriesFilter],
   );
 
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [batchToDelete, setBatchToDelete] = useState<Batch | null>(null);
+  const [batchToEdit, setBatchToEdit] = useState<Batch | null>(null);
   const [pendingTransition, setPendingTransition] =
     useState<PendingTransition | null>(null);
 
@@ -128,18 +238,32 @@ function RouteComponent() {
 
   const totalBoxes = sizeBatches.reduce((sum, b) => sum + b.boxes, 0);
 
-  const handleConfirmDelete = () => {
-    if (batchToDelete) {
-      deleteBatch(batchToDelete.id);
-      setBatchToDelete(null);
-    }
-  };
+  const isTransitionPending =
+    startProductionMutation.isPending || completeProductionMutation.isPending;
 
   const handleConfirmTransition = () => {
     if (!pendingTransition) return;
     const { batch, next } = pendingTransition;
-    updateBatchStatus(batch.id, next);
-    toast.success(`Batch ${batch.id} marked as ${STATUS_LABEL[next]}`);
+
+    const onTransitionSuccess = () => {
+      toast.success(`Batch ${batch.id} moved to ${STATUS_LABEL[next]}`);
+      setPendingTransition(null);
+    };
+
+    if (next === "in_production") {
+      startProductionMutation.mutate(batch.apiId, {
+        onSuccess: onTransitionSuccess,
+      });
+      return;
+    }
+
+    if (next === "production_completed") {
+      completeProductionMutation.mutate(batch.apiId, {
+        onSuccess: onTransitionSuccess,
+      });
+      return;
+    }
+
     setPendingTransition(null);
   };
 
@@ -181,9 +305,11 @@ function RouteComponent() {
         <div className="flex items-center gap-3">
           <SummaryChip label="Batches" value={sizeBatches.length} />
           <SummaryChip label="Boxes" value={totalBoxes} />
-          <Button startIcon="Plus" onClick={() => setIsAddOpen(true)}>
-            Add Batch
-          </Button>
+          {canWrite && (
+            <Button startIcon="Plus" onClick={() => setIsAddOpen(true)}>
+              Add Batch
+            </Button>
+          )}
         </div>
       </div>
 
@@ -203,8 +329,9 @@ function RouteComponent() {
             }
             onChange={(v) => {
               const val = (v as SelectOption<string> | null)?.value ?? "";
-              setFinishFilter(val as Finish | "");
+              setFinishFilter(val);
               setSeriesFilter("");
+              setDesignFilter("");
             }}
             placeholder="Finish"
             isSearchable={false}
@@ -215,11 +342,12 @@ function RouteComponent() {
             value={
               seriesOptions.find((o) => o.value === seriesFilter) ?? null
             }
-            onChange={(v) =>
+            onChange={(v) => {
               setSeriesFilter(
                 (v as SelectOption<string> | null)?.value ?? "",
-              )
-            }
+              );
+              setDesignFilter("");
+            }}
             placeholder="Series"
             isSearchable={false}
             width={160}
@@ -255,28 +383,35 @@ function RouteComponent() {
         </div>
       </div>
 
-      <BatchesTable
-        batches={filteredBatches}
-        onDelete={(batch) => setBatchToDelete(batch)}
-        onRequestStatusChange={(batch, next) =>
-          setPendingTransition({ batch, next })
-        }
-        emptyState={filteredEmptyState}
-      />
+      <QueryStateHandler
+        query={batchesQuery}
+        loadingSkeleton={<BatchesTableSkeleton />}
+        emptyTitle="No batches yet"
+        isEmpty={sizeBatches.length === 0}
+      >
+        <BatchesTable
+          batches={filteredBatches}
+          onRequestStatusChange={(batch, next) =>
+            setPendingTransition({ batch, next })
+          }
+          onEdit={(batch) => setBatchToEdit(batch)}
+          emptyState={filteredEmptyState}
+          canWrite={canWrite}
+        />
+      </QueryStateHandler>
 
       <AddBatchDialog
         isOpen={isAddOpen}
         close={() => setIsAddOpen(false)}
         size={typedSize}
+        sizeId={sizeRecord.id}
+        designs={designs}
       />
 
-      <DeleteDialog
-        isOpen={batchToDelete !== null}
-        close={() => setBatchToDelete(null)}
-        onDelete={handleConfirmDelete}
-        isDeleting={false}
-        name={batchToDelete?.id}
-        title="Delete Batch"
+      <EditBatchDialog
+        isOpen={batchToEdit !== null}
+        close={() => setBatchToEdit(null)}
+        batch={batchToEdit}
       />
 
       <Dialog
@@ -288,12 +423,15 @@ function RouteComponent() {
           primary: {
             label: "Confirm",
             onClick: handleConfirmTransition,
+            loading: isTransitionPending,
+            disabled: isTransitionPending,
           },
           secondary: {
             label: "Cancel",
             onClick: () => setPendingTransition(null),
             variant: "filled",
             color: "neutral",
+            disabled: isTransitionPending,
           },
         }}
       >
@@ -331,4 +469,16 @@ const SummaryChip: React.FC<SummaryChipProps> = ({ label, value }) => (
       {value}
     </span>
   </div>
+);
+
+const BatchPageSkeleton = () => (
+  <div className="page-enter space-y-6 pb-8">
+    <div className="shimmer h-12 w-72 rounded-xl" />
+    <div className="shimmer h-12 w-full rounded-xl" />
+    <div className="shimmer h-72 w-full rounded-2xl" />
+  </div>
+);
+
+const BatchesTableSkeleton = () => (
+  <div className="shimmer h-72 w-full rounded-2xl" />
 );

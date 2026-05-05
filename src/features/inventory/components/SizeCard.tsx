@@ -3,12 +3,14 @@ import { Link } from "@tanstack/react-router";
 import { ArrowUpRight, Layers, Package } from "lucide-react";
 
 interface SizeCardProps {
+  id: string;
   size: string;
   batchCount: number;
   totalBoxes: number;
 }
 
 const SizeCard: React.FC<SizeCardProps> = ({
+  id,
   size,
   batchCount,
   totalBoxes,
@@ -16,7 +18,7 @@ const SizeCard: React.FC<SizeCardProps> = ({
   return (
     <Link
       to="/inventory/$size"
-      params={{ size }}
+      params={{ size: id }}
       className={cn(
         "group card relative flex flex-col gap-4 p-6 transition-all",
         "hover:-translate-y-0.5 hover:shadow-md",

@@ -36,9 +36,10 @@ function RouteComponent() {
           {sizes.map((size) => (
             <SizeCard
               key={size.id}
+              id={size.id}
               size={size.name}
-              batchCount={0}
-              totalBoxes={0}
+              batchCount={size.totalBatches}
+              totalBoxes={size.totalBoxes}
             />
           ))}
         </div>
