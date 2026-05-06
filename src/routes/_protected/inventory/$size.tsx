@@ -74,6 +74,7 @@ const buildSeriesOptions = (
 ): NamedRecord[] => {
   const map = new Map<string, NamedRecord>();
   for (const d of designs) {
+    if (!d.series) continue;
     const matchesFinish = finishName
       ? d.sizeFinishes.some(
           (sf) => sf.size.id === sizeId && sf.finish.name === finishName,
@@ -96,7 +97,7 @@ const buildDesignOptions = (
   for (const d of designs) {
     const matchesSize = d.sizeFinishes.some((sf) => sf.size.id === sizeId);
     if (!matchesSize) continue;
-    if (seriesName && d.series.name !== seriesName) continue;
+    if (seriesName && d.series?.name !== seriesName) continue;
     if (
       finishName &&
       !d.sizeFinishes.some(
@@ -127,9 +128,9 @@ const toFlatBatch = (item: BatchListItem, size: SizeKey): Batch => ({
   apiId: item.id,
   id: item.batchId,
   size,
-  finish: item.sizeFinish.finish.name,
-  series: item.design.series.name,
-  designCode: item.design.name,
+  finish: item.sizeFinish?.finish?.name ?? "—",
+  series: item.design?.series?.name ?? "—",
+  designCode: item.design?.name ?? "—",
   boxes: item.numberOfBoxes,
   status: item.status,
   createdAt: item.createdAt,

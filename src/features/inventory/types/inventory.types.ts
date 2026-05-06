@@ -56,7 +56,7 @@ export interface InventoryDesign {
   id: string;
   name: string;
   thumbnailUrl: string;
-  series: InventorySeries;
+  series: InventorySeries | null;
   sizeFinishes: InventorySizeFinish[];
   isActive: boolean;
   status: DesignStatus;
@@ -131,8 +131,8 @@ export interface BatchStatusHistoryEntry {
 export interface BatchListItem {
   id: string;
   batchId: string;
-  design: InventoryDesign;
-  sizeFinish: InventorySizeFinish;
+  design: InventoryDesign | null;
+  sizeFinish: InventorySizeFinish | null;
   size: InventorySize;
   numberOfBoxes: number;
   status: BatchStatus;

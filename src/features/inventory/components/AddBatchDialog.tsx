@@ -66,6 +66,7 @@ const AddBatchDialog: React.FC<AddBatchDialogProps> = ({
     if (!finishId) return [];
     const map = new Map<string, NamedRecord>();
     for (const d of designs) {
+      if (!d.series) continue;
       const matches = d.sizeFinishes.some(
         (sf) => sf.size.id === sizeId && sf.finish.id === finishId,
       );
@@ -81,7 +82,7 @@ const AddBatchDialog: React.FC<AddBatchDialogProps> = ({
     return designs
       .filter(
         (d) =>
-          d.series.id === seriesId &&
+          d.series?.id === seriesId &&
           d.sizeFinishes.some(
             (sf) => sf.size.id === sizeId && sf.finish.id === finishId,
           ),
